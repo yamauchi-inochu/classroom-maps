@@ -1,0 +1,190 @@
+<html style="height: 100%; margin: 0;">
+<head>
+
+	<title>topodemo</title>
+
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<link rel="shortcut icon" type="image/x-icon" href="docs/images/favicon.ico" />
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+	<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+	<script src='https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/Leaflet.fullscreen.min.js'></script>
+	<script src="./js/leaflet-hash-master/leaflet-hash.js"></script>
+	<link href='https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/leaflet.fullscreen.css' rel='stylesheet' />
+	<link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css"/>
+	<link rel="stylesheet" href="./dist/leaflet.zoomhome.css"/>
+	<script src="./dist/leaflet.zoomhome.min.js"></script>
+	<script src="./dist/bundle.js"></script>
+	<link href='https://api.tiles.mapbox.com/mapbox.js/plugins/leaflet-draw/v0.2.2/leaflet.draw.css' rel='stylesheet' />
+	<script src='https://api.tiles.mapbox.com/mapbox.js/plugins/leaflet-draw/v0.2.2/leaflet.draw.js'></script>
+	<script src="./js/L.KML.js"></script>
+	<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+
+
+	</head>
+	<body style="height: 100%; margin: 0; overflow: hidden;">
+		<div style="position: absolute; bottom: 50px; right: 20px; z-index: 999;">
+			<details>
+			<summary style="color: #fff; background-color: #000080;">凡例</summary>
+			<img src="hanrei.png" style="pointer-events: none;">
+			</details>
+		</div>
+	<div id='map' style="height: 100%; width: 100%; z-index: 1;"></div>
+
+	</body>
+
+	<script>
+
+window.onbeforeunload = function(e) {
+  return "";
+}
+
+
+	var map1 = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png', {
+	maxZoom: 16,
+	attribution: "<a href='https://maps.gsi.go.jp/development/ichiran.html' target='_blank'>地理院タイル・淡色地図</a>"
+	});
+
+	var map2 = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/ort/{z}/{x}/{y}.jpg', {
+	maxZoom: 16,
+	attribution: "<a href='https://maps.gsi.go.jp/development/ichiran.html' target='_blank'>地理院タイル・電子国土基本図（オルソ画像）（2007年～）</a>"
+	});
+
+	var map3 = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/ort_USA10/{z}/{x}/{y}.png', {
+	maxZoom: 16,
+	attribution: "<a href='https://maps.gsi.go.jp/development/ichiran.html' target='_blank'>地理院タイル・年代別の写真・1945年～1950年</a>"
+	});
+
+	var map4 = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/hillshademap/{z}/{x}/{y}.png', {
+	maxZoom: 16,
+	attribution: "<a href='https://maps.gsi.go.jp/development/ichiran.html' target='_blank'>地理院タイル・陰影起伏図・1945年～1950年</a>"
+	});
+
+	var layer1 = L.tileLayer('https://disaportaldata.gsi.go.jp/raster/01_flood_l2_shinsuishin_data/{z}/{x}/{y}.png', {
+	maxZoom: 16,
+	opacity:0.7,
+	attribution: "<a href='https://disaportal.gsi.go.jp/hazardmap/copyright/opendata.html#l2shinsuishin' target='_blank'>ハザードマップポータルサイト・洪水浸水想定区域（想定最大規模）</a>"
+	});
+
+	var LineStyle = {
+    "color": "#dc143c",
+    "weight": 4,
+    "opacity": 0.8
+};
+
+	var PolygonStyle = {
+	"weight": 2,
+	"color": "#1456db",
+	"opacity": 1,
+	"fillColor": "#1456db",
+	"fillOpacity": 0.3
+	};
+
+	var layer2 = L.layerGroup();
+
+	$.getJSON("https://gg-oer.github.io/maps/geojson/area.geojson", function (data) {
+    L.geoJson(data, {style: LineStyle}).bindPopup(function (layer) {
+    return layer.feature.properties.name;
+}).addTo(layer2)
+});
+
+
+	var layer3 = L.layerGroup();
+
+	$.getJSON("https://gg-oer.github.io/maps/geojson/shelters.geojson", function (data) {
+    L.geoJson(data).bindPopup(function (layer) {
+    return layer.feature.properties.name;
+}).addTo(layer3)
+});
+
+	var layer4 = L.layerGroup();
+
+	$.getJSON("https://gg-oer.github.io/maps/geojson/0m.geojson", function (data) {
+    L.geoJson(data, {style: PolygonStyle}).bindPopup(function (layer) {
+    return layer.feature.properties.name;
+}).addTo(layer4)
+});
+
+		var map = L.map('map', {
+			center: [35.681, 139.767],
+			zoom: 11,
+			layers: [map1,layer1,layer2],
+			zoomControl: false
+		});
+
+		var baseLayers = {
+			"地図": map1
+		};
+
+		var overlays = {
+			"最近の空中写真": map2,
+			"過去の空中写真（1945年～1950年）":map3,
+			"陰影起伏図":map4,
+		    "洪水浸水想定区域（想定最大規模）": layer1,
+			"避難施設":layer3,
+			"主要な0m以下エリア":layer4
+		};
+
+		L.control.layers(baseLayers,overlays).addTo(map);
+		L.control.scale({imperial: false}).addTo(map);
+
+		var zoomHome = L.Control.zoomHome();
+		zoomHome.addTo(map);
+		map.addControl(new L.Control.Fullscreen());
+
+		var printer = L.easyPrint({
+			tileLayer: map1,
+			sizeModes: ['Current', 'A4Landscape', 'A4Portrait'],
+			filename: 'Map',
+			exportOnly: true,
+			hideControlContainer: true
+}).addTo(map);
+
+function manualPrint () {
+	printer.printMap('CurrentSize', 'MyManualPrint')
+}
+
+map.on('overlayadd overlayremove baselayerchange', function(eventLayer) {
+	var eventName = event.type; // イベント名（"overlayadd"または"overlayremove"）
+	var layerName = eventLayer.name; // レイヤ名
+	var layerShown = map.hasLayer(eventLayer.layer); // レイヤが表示されているかどうか
+
+	console.log(eventName + ': ' + layerName + ' shown: ' + layerShown);
+});
+
+var hash = new L.Hash(map);
+
+// 図形をまとめるためのオブジェクト
+var drawnItems = new L.FeatureGroup().addTo(map);
+var drawControl = new L.Control.Draw({
+	draw: {
+    polyline: false
+    ,polygon: false
+    ,rectangle: false
+    ,circle: false
+    ,marker: true
+  },
+  edit: {
+    featureGroup: drawnItems
+  }
+  ,position: 'topleft'
+}).addTo(map);
+
+map.on('draw:created', function(e) {
+  drawnItems.addLayer(e.layer);
+});
+
+let intervalId = setInterval(() => {
+  console.log(window.location.href);
+}, 5000);
+
+setTimeout(() => {
+  clearInterval(intervalId);
+}, 7200000); // 2時間（2 * 60 * 60 * 1000ミリ秒）
+
+</script>
+
+
+</html>
